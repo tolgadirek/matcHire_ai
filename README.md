@@ -39,3 +39,8 @@ pip install -r requirements.txt
 cd src
 python app_gui.py
 ```
+### Model Train etme 
+```bash
+python ./src/train_model.py --data_dir ./data --train_csv train_pairs.csv --model_name BAAI/bge-base-en-v1.5 --model_out ./models/job_match_model --epochs 4 --batch_size 16 --balance --save_embeddings
+
+Eğer ki ram yetmezse batch_size ı 8 e düşür öyle dene 
