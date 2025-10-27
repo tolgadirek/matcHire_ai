@@ -4,7 +4,7 @@ import os
 from tqdm import tqdm
 
 def create_pairs():
-    base_dir = "../data"
+    base_dir = "./data"
     resume_path = os.path.join(base_dir, "resume_dataset.csv")
     job_path = os.path.join(base_dir, "job_description_dataset.csv")
 

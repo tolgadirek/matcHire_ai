@@ -2,7 +2,7 @@
 from sentence_transformers import SentenceTransformer, util
 
 # Model sadece bir kez yüklensin
-MODEL_PATH = "../models/job_match_model"
+MODEL_PATH = "./models/job_match_model"
 model = SentenceTransformer(MODEL_PATH)
 
 def calculate_similarity(cv_text: str, job_text: str) -> float:
