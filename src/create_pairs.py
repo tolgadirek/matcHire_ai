@@ -2,6 +2,8 @@ import pandas as pd
 import random
 import os
 from tqdm import tqdm
+from sentence_transformers import SentenceTransformer, util
+import torch
 
 def create_pairs():
     base_dir = "./data"
@@ -27,27 +29,34 @@ def create_pairs():
     resumes = resumes.dropna(subset=["text"])
     jobs = jobs.dropna(subset=["text"])
 
+    print("🔍 SentenceTransformer modeli yükleniyor...")
+    model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+
+    print("📐 Embedding hesaplanıyor...")
+    resume_embeddings = model.encode(resumes["text"].tolist(), convert_to_tensor=True, show_progress_bar=True)
+    job_embeddings = model.encode(jobs["text"].tolist(), convert_to_tensor=True, show_progress_bar=True)
+
     pairs = []
 
-    print("Pozitif örnekler oluşturuluyor...")
-    for i, r in tqdm(resumes.iterrows(), total=len(resumes)):
-        cat = str(r.get("category", "")).lower().strip()
-        if not cat or cat == "nan":
-            continue
-        matches = [j for j in jobs["text"].tolist() if cat in j.lower()]
-        if matches:
-            job_text = random.choice(matches)
-            pairs.append([r["text"], job_text, 1])
+    print("✨ Pozitif örnekler oluşturuluyor...")
+    for i in tqdm(range(len(resumes))):
+        resume_emb = resume_embeddings[i]
+        cos_scores = util.cos_sim(resume_emb, job_embeddings)[0]
+        best_idx = torch.argmax(cos_scores).item()
+        best_score = cos_scores[best_idx].item()
 
-    print("Negatif örnekler oluşturuluyor...")
-    for i, r in tqdm(resumes.iterrows(), total=len(resumes)):
+        if best_score > 0.55:  # benzerlik eşiği (ayarlanabilir)
+            pairs.append([resumes.iloc[i]["text"], jobs.iloc[best_idx]["text"], 1])
+
+    print("❌ Negatif örnekler oluşturuluyor...")
+    for i in tqdm(range(len(resumes))):
         job_text = jobs.sample(1).iloc[0]["text"]
-        pairs.append([r["text"], job_text, 0])
+        pairs.append([resumes.iloc[i]["text"], job_text, 0])
 
     df_pairs = pd.DataFrame(pairs, columns=["cv_text", "job_text", "label"])
-    out_path = os.path.join(base_dir, "train_pairs.csv")
+    out_path = os.path.join(base_dir, "train_pairs2.csv")
     df_pairs.to_csv(out_path, index=False)
-    print(f"✅ train_pairs.csv oluşturuldu: {out_path} ({len(df_pairs)} satır)")
+    print(f"\n✅ train_pairs.csv oluşturuldu: {out_path} ({len(df_pairs)} satır)")
 
 if __name__ == "__main__":
     create_pairs()
