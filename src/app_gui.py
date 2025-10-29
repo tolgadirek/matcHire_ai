@@ -9,6 +9,8 @@ import json
 from pdf_to_text import pdf_to_text
 from info_extractor_combined import extract_info
 from matcher import calculate_similarity  # 🔹 Artık buradan geliyor
+from hybrid_scorer import hybrid_score
+from sentence_transformers import SentenceTransformer
 
 def process_cv():
     """PDF dosyasını seçip modeli test eder (sadece görsel amaçlı)."""
@@ -34,7 +36,7 @@ def process_cv():
 
         # Skor hesapla
         result_text.insert(tk.END, "🎯 Skor hesaplanıyor...\n")
-        score = calculate_similarity(cv_text, job_text)
+        score = hybrid_score(SentenceTransformer("./models/smart_job_model"), cv_text, job_text, alpha=0.7)
 
         # GUI’ye yazdır
         result_text.insert(tk.END, f"\n✅ Benzerlik Skoru: {score}\n\n")
