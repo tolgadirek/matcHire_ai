@@ -70,7 +70,7 @@ def extract_info_gemini_from_pdf(pdf_path: str) -> Dict[str, Any]:
 
     # Prompt oluştur
     prompt = f"""
-    You are an expert CV parser. Analyze this CV content extracted from a PDF.
+    You are an expert CV parser. Analyze this CV content extracted from a PDF. First, translate English all the CV.
     Each section corresponds to a block grouped by visual headers (uppercase or large font).
     Use context to fill structured JSON below.
 
