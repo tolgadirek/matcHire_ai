@@ -70,9 +70,12 @@ def extract_info_gemini_from_pdf(pdf_path: str) -> Dict[str, Any]:
 
     # Prompt oluştur
     prompt = f"""
-    You are an expert CV parser. Analyze this CV content extracted from a PDF.
-    Each section corresponds to a block grouped by visual headers (uppercase or large font).
-    Use context to fill structured JSON below.
+    You are an expert CV parser. The CV content may be written in Turkish or other languages.
+    Before processing, translate the entire CV into English. 
+    Then, extract the information strictly based on the translated English version.
+
+    Each section below corresponds to a block grouped by visual headers (uppercase or large font).
+    Use this context to accurately map information into the structured JSON.
 
     Return ONLY valid JSON in this format:
 
@@ -92,6 +95,7 @@ def extract_info_gemini_from_pdf(pdf_path: str) -> Dict[str, Any]:
     }}
 
     Rules:
+    - Translate non-English content to English before extracting.
     - Use detected sections for accurate grouping.
     - Treat all-uppercase or large-font lines as headers.
     - Select the longest paragraph as summary.
@@ -141,6 +145,7 @@ def extract_info(cv_text_or_path: str) -> Dict[str, Any]:
         prompt = f"""
         Extract structured CV information from the text below and return valid JSON
         (same schema as before).
+        Translate non-English parts to English first.
 
         CV Text:
         {cv_text_or_path}

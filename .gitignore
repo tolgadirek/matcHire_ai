@@ -11,10 +11,10 @@ venv/
 
 # Checkpoints and local models
 checkpoints/
-models/job_match_model/
+models/
 
 # Data (if too large)
-data/*.csv
+data/
 
 # System files
 .DS_Store
