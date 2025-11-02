@@ -34,6 +34,8 @@ def process_cv():
 
         # Skor hesapla
         result_text.insert(tk.END, "🎯 Skor hesaplanıyor...\n")
+        print("CV Text:", cv_text)
+        print("Job Text:", job_text)
         score = calculate_similarity(cv_text, job_text)
 
         # GUI’ye yazdır
