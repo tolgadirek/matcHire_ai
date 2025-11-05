@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 import re
-from typing import Optional
+from typing import Optional, List
 import numpy as np
 from sentence_transformers import SentenceTransformer , util
 
@@ -33,6 +33,12 @@ class ModelService:
         logger.info("Loading SentenceTransformer model from %s", self.model_path)
         self._model = SentenceTransformer(str(self.model_path))
         logger.info("Model loaded successfully")
+
+    def embed(self, text: str):
+        return self._model.encode(text, convert_to_tensor=True)
+
+    def embed_batch(self, texts: List[str]):
+        return self._model.encode(texts, convert_to_tensor=True)
 
     def keyword_overlap(self, cv_text: str, job_text: str) -> float:
         """Basit kelime örtüşme oranı"""
