@@ -156,6 +156,30 @@ def create_app(model_path: Optional[Path] = None) -> Flask:
         except Exception as exc:
             logger.exception("Failed batch similarity: %s", exc)
             return jsonify({"error": "Internal server error"}), 500
+        
+    @app.route("/explain_keywords", methods=["POST"])
+    def explain_keywords():
+        """
+        POST JSON: {"cv_text": "...", "job_text": "..."}
+        KeyBERT + spaCy + langdetect ile iş ilanındaki eksik anahtar kelimeleri tespit eder.
+        Şimdilik sonuçları terminale basar.
+        """
+        data = request.get_json(silent=True) or {}
+        cv_text = data.get("cv_text", "")
+        job_text = data.get("job_text", "")
+
+        if not isinstance(cv_text, str) or not cv_text.strip():
+            return jsonify({"error": "cv_text must be non-empty string"}), 400
+        if not isinstance(job_text, str) or not job_text.strip():
+            return jsonify({"error": "job_text must be non-empty string"}), 400
+
+        service: ModelService = current_app.config["MODEL_SERVICE"]
+        missing = service.explain_missing_keywords(cv_text=cv_text, job_text=job_text)
+
+        return jsonify({
+            "message": "Eksik kelimeler terminale yazdırıldı.",
+            "missing_keywords_count": len(missing)
+        })
 
     return app
 
