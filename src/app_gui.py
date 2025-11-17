@@ -5,9 +5,7 @@ load_dotenv()
 
 import tkinter as tk
 from tkinter import filedialog, scrolledtext
-import json
 from pdf_to_text import pdf_to_text
-from info_extractor_combined import extract_info
 from matcher import calculate_similarity  # 🔹 Artık buradan geliyor
 
 def process_cv():
@@ -30,7 +28,6 @@ def process_cv():
 
         # CV analizi
         result_text.insert(tk.END, "🧠 CV analiz ediliyor...\n")
-        cv_info = extract_info(cv_text)
 
         # Skor hesapla
         result_text.insert(tk.END, "🎯 Skor hesaplanıyor...\n")
@@ -41,7 +38,7 @@ def process_cv():
         # GUI’ye yazdır
         result_text.insert(tk.END, f"\n✅ Benzerlik Skoru: {score}\n\n")
         result_text.insert(tk.END, "📊 Çıkarılan Bilgiler (JSON):\n")
-        result_text.insert(tk.END, json.dumps(cv_info, indent=2, ensure_ascii=False))
+        result_text.insert(tk.END, cv_text)
 
     except Exception as e:
         result_text.insert(tk.END, f"\n❌ Hata: {str(e)}\n")

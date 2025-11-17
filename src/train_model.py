@@ -23,9 +23,7 @@ Note: requires sentence-transformers, scikit-learn, torch>=2.0
 import os
 import argparse
 import random
-import math
 import json
-from pathlib import Path
 from typing import List, Tuple
 
 import numpy as np
@@ -34,12 +32,10 @@ from tqdm import tqdm
 
 import torch
 from torch.utils.data import Dataset, DataLoader
-from transformers.optimization import Adafactor, get_linear_schedule_with_warmup
 from sentence_transformers import SentenceTransformer, InputExample, losses, util
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score, accuracy_score, f1_score, precision_recall_fscore_support
-from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
 
 # -------------------- Utilities --------------------
