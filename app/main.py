@@ -69,50 +69,37 @@ def create_app(model_path: Optional[Path] = None) -> Flask:
             return jsonify({"error": "Internal server error while embedding"}), 500
 
     @app.route("/similarity", methods=["POST"])
-    def similarity_endpoint() -> Any:
+    def similarity_endpoint():
         """
-        Supports:
-        - POST JSON: {"cv_text": "...", "job_text": "..."}
-        - POST multipart/form-data with file + job_text
-        Returns similarity score
+        Accepts:
+        {
+            "cvId": "...",
+            "job_text": "...",
+            "cv_path": "uploads/cv/.../abc.pdf"  (Node gönderebilir)
+        }
         """
 
-        service: ModelService = current_app.config["MODEL_SERVICE"]
+        data = request.get_json(silent=True) or {}
 
-        # ---- Case 1: CV as PDF file ----
-        if "cv_file" in request.files:
-            file = request.files["cv_file"]
-            if file.filename == "":
-                return jsonify({"error": "Uploaded CV file has no name"}), 400
-            
-            tmp = tempfile.NamedTemporaryFile(delete=False)
-            file.save(tmp.name)
-            try:
-                cv_text = pdf_to_text(tmp.name)
-            finally:
-                os.remove(tmp.name)
-            
-            job_text = request.form.get("job_text", "").strip()
+        cv_id = data.get("cvId")
+        job_text = data.get("job_text")
+        cv_path = data.get("cv_path")  # Node bunu gönderecek
 
-        # ---- Case 2: Plain JSON text ----
-        else:
-            data: Dict[str, Any] = request.get_json(silent=True) or {}
-            cv_text = data.get("cv_text", "")
-            job_text = data.get("job_text", "")
+        if not cv_path or not job_text:
+            return jsonify({"error": "cv_path and job_text required"}), 400
 
-        #print(data)
-        if not isinstance(cv_text, str) or not cv_text.strip():
-            return jsonify({"error": "cv_text must be non-empty string"}), 400
-        if not isinstance(job_text, str) or not job_text.strip():
-            return jsonify({"error": "job_text must be non-empty string"}), 400
-
+        # PDF → metin
         try:
-            score = service.cosine_similarity(cv_text=cv_text, job_text=job_text)
-            return jsonify({"similarity": score})
-        except Exception as exc:
-            logger.exception("Failed to compute similarity: %s", exc)
-            return jsonify({"error": "Internal server error"}), 500
-    
+            cv_text = pdf_to_text(cv_path)
+        except Exception as e:
+            return jsonify({"error": f"PDF could not be read: {e}"}), 500
+
+        # similarity hesapla
+        service: ModelService = current_app.config["MODEL_SERVICE"]
+        score = service.cosine_similarity(cv_text=cv_text, job_text=job_text)
+
+        return jsonify({"similarity": score})
+        
     @app.route("/batch_similarity", methods=["POST"])
     def batch_similarity_endpoint() -> Any:
         """
