@@ -16,9 +16,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-import numpy as np
-from flask import Flask, json, jsonify, request, current_app
-from sentence_transformers import SentenceTransformer
+from flask import Flask, jsonify, request, current_app
 from model_service import ModelService
 from pdf_to_text import pdf_to_text
 import os

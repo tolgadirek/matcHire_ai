@@ -7,6 +7,9 @@ import tkinter as tk
 from tkinter import filedialog, scrolledtext
 from pdf_to_text import pdf_to_text
 from matcher import calculate_similarity  # 🔹 Artık buradan geliyor
+from utils import filter_requirements, job_description_to_atoms
+from suggestion import generate_recommendations, format_final_report
+import os   
 
 def process_cv():
     """PDF dosyasını seçip modeli test eder (sadece görsel amaçlı)."""
@@ -35,11 +38,20 @@ def process_cv():
         print("Job Text:", job_text)
         score = calculate_similarity(cv_text, job_text)
 
+        print("Suggestioons: ")
+        # Gereksinimleri çıkar
+        atoms = job_description_to_atoms(job_text)
+        real_requirements = filter_requirements(atoms)
+        recommendations = generate_recommendations(real_requirements, cv_text)
+        format_final_report(recommendations)
+        print("Recommendations:")
+        format
         # GUI’ye yazdır
         result_text.insert(tk.END, f"\n✅ Benzerlik Skoru: {score}\n\n")
         result_text.insert(tk.END, "📊 Çıkarılan Bilgiler (JSON):\n")
         result_text.insert(tk.END, cv_text)
-
+        result_text.insert(tk.END, "\n\n💡 Öneriler:\n"
+                           f"{os.linesep.join([str(rec) for rec in recommendations])}\n")
     except Exception as e:
         result_text.insert(tk.END, f"\n❌ Hata: {str(e)}\n")
 
