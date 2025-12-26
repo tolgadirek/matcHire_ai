@@ -7,6 +7,7 @@ from sentence_transformers import SentenceTransformer , util
 from deep_translator import GoogleTranslator
 from langdetect import detect
 from keybert import KeyBERT
+from pdf_to_text import pdf_to_text
 import spacy
 
 LOG_LEVEL = logging.INFO
@@ -37,12 +38,6 @@ class ModelService:
         logger.info("Loading SentenceTransformer model from %s", self.model_path)
         self._model = SentenceTransformer(str(self.model_path))
         logger.info("Model loaded successfully")
-
-    def embed(self, text: str):
-        return self._model.encode(text, convert_to_tensor=True)
-
-    def embed_batch(self, texts: List[str]):
-        return self._model.encode(texts, convert_to_tensor=True)
 
     def keyword_overlap(self, cv_text: str, job_text: str) -> float:
         """Basit kelime örtüşme oranı"""

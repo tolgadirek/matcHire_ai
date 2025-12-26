@@ -44,139 +44,60 @@ def create_app(model_path: Optional[Path] = None) -> Flask:
     # Load model service once and attach to app
     app.config["MODEL_SERVICE"] = ModelService(model_path)
 
-    @app.route("/embed", methods=["POST"])
-    def embed_endpoint() -> Any:
-        """
-        POST JSON {"text": "..."} -> returns {"embedding": [...]}
-        """
-        data: Dict[str, Any] = request.get_json(silent=True) or {}
-        text = data.get("text")
-        if text is None:
-            return jsonify({"error": "Missing field: 'text'"}), 400
-        if not isinstance(text, str):
-            return jsonify({"error": "Field 'text' must be a string"}), 400
-        if not text.strip():
-            return jsonify({"error": "'text' cannot be empty"}), 400
-        
-        try:
-            service: ModelService = current_app.config["MODEL_SERVICE"]
-            embedding = service.embed(text)
-            return jsonify({"embedding": embedding.tolist()})
-        except Exception as exc:
-            logger.exception("Embed failed: %s", exc)
-            return jsonify({"error": "Internal server error while embedding"}), 500
-
     @app.route("/similarity", methods=["POST"])
-    def similarity_endpoint() -> Any:
+    def similarity_endpoint():
         """
-        Supports:
-        - POST JSON: {"cv_text": "...", "job_text": "..."}
-        - POST multipart/form-data with file + job_text
-        Returns similarity score
-        """
-
-        service: ModelService = current_app.config["MODEL_SERVICE"]
-
-        # ---- Case 1: CV as PDF file ----
-        if "cv_file" in request.files:
-            file = request.files["cv_file"]
-            if file.filename == "":
-                return jsonify({"error": "Uploaded CV file has no name"}), 400
-            
-            tmp = tempfile.NamedTemporaryFile(delete=False)
-            file.save(tmp.name)
-            try:
-                cv_text = pdf_to_text(tmp.name)
-            finally:
-                os.remove(tmp.name)
-            
-            job_text = request.form.get("job_text", "").strip()
-
-        # ---- Case 2: Plain JSON text ----
-        else:
-            data: Dict[str, Any] = request.get_json(silent=True) or {}
-            cv_text = data.get("cv_text", "")
-            job_text = data.get("job_text", "")
-
-        #print(data)
-        if not isinstance(cv_text, str) or not cv_text.strip():
-            return jsonify({"error": "cv_text must be non-empty string"}), 400
-        if not isinstance(job_text, str) or not job_text.strip():
-            return jsonify({"error": "job_text must be non-empty string"}), 400
-
-        try:
-            score = service.cosine_similarity(cv_text=cv_text, job_text=job_text)
-            return jsonify({"similarity": score})
-        except Exception as exc:
-            logger.exception("Failed to compute similarity: %s", exc)
-            return jsonify({"error": "Internal server error"}), 500
-    
-    @app.route("/batch_similarity", methods=["POST"])
-    def batch_similarity_endpoint() -> Any:
-        """
-        POST JSON {
-        "cv_list": ["...", "...", ...],
-        "job_text": "..."
+        Accepts:
+        {
+            "cvId": "...",
+            "job_text": "...",
+            "cv_path": "uploads/cv/.../abc.pdf"  (Node gönderebilir)
         }
-        Returns: [{"cv_index":0, "similarity":0.87}, ...]
         """
 
         data = request.get_json(silent=True) or {}
 
-        cv_list = data.get("cv_list")
-        job_text = data.get("job_text", "")
+        cv_id = data.get("cvId")
+        job_text = data.get("job_text")
+        cv_path = data.get("cv_path")  # Node bunu gönderecek
 
-        # --- Input validation ---
-        if not isinstance(cv_list, list) or not cv_list:
-            return jsonify({"error": "cv_list must be a non-empty array of strings"}), 400
+        if not cv_path or not job_text:
+            return jsonify({"error": "cv_path and job_text required"}), 400
 
-        if not isinstance(job_text, str) or not job_text.strip():
-            return jsonify({"error": "job_text must be a non-empty string"}), 400
-
-        # Ensure all are strings
-        if any(not isinstance(cv, str) or not cv.strip() for cv in cv_list):
-            return jsonify({"error": "All CV entries must be non-empty strings"}), 400
-
+        # PDF → metin
         try:
-            service: ModelService = current_app.config["MODEL_SERVICE"]
-            cv_embeddings = service.embed_batch(cv_list)
-            job_emb = service.embed(job_text)
-            sims = util.cos_sim(cv_embeddings, job_emb).cpu().numpy().flatten()
-            results = []
-            for i, sim in enumerate(sims):
-                results.append({
-                    "cv_index": i,
-                    "similarity": round(float(sim), 3)
-                })
+            cv_text = pdf_to_text(cv_path)
+        except Exception as e:
+            return jsonify({"error": f"PDF could not be read: {e}"}), 500
 
-            return jsonify({"results": results})
+        # similarity hesapla
+        service: ModelService = current_app.config["MODEL_SERVICE"]
+        score = service.cosine_similarity(cv_text=cv_text, job_text=job_text)
 
-        except Exception as exc:
-            logger.exception("Failed batch similarity: %s", exc)
-            return jsonify({"error": "Internal server error"}), 500
+        return jsonify({"similarity": score})
         
     @app.route("/explain_keywords", methods=["POST"])
     def explain_keywords():
-        """
-        POST JSON: {"cv_text": "...", "job_text": "..."}
-        KeyBERT + spaCy + langdetect ile iş ilanındaki eksik anahtar kelimeleri tespit eder.
-        Şimdilik sonuçları terminale basar.
-        """
         data = request.get_json(silent=True) or {}
-        cv_text = data.get("cv_text", "")
+
+        cv_path = data.get("cv_path")
         job_text = data.get("job_text", "")
 
-        if not isinstance(cv_text, str) or not cv_text.strip():
-            return jsonify({"error": "cv_text must be non-empty string"}), 400
-        if not isinstance(job_text, str) or not job_text.strip():
-            return jsonify({"error": "job_text must be non-empty string"}), 400
+        if not cv_path or not job_text:
+            return jsonify({"error": "cv_path and job_text required"}), 400
+
+        # PDF → metin çıkar
+        try:
+            cv_text = pdf_to_text(cv_path)
+        except Exception as e:
+            return jsonify({"error": f"PDF could not be read: {e}"}), 500
 
         service: ModelService = current_app.config["MODEL_SERVICE"]
         missing = service.explain_missing_keywords(cv_text=cv_text, job_text=job_text)
 
         return jsonify({
-            "message": "Eksik kelimeler terminale yazdırıldı.",
-            "missing_keywords_count": len(missing)
+            "missing_keywords": missing,
+            "count": len(missing)
         })
 
     return app
