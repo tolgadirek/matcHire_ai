@@ -35,7 +35,7 @@ def generate_recommendations(real_requirements, cv_text, model=model):
                 "score": round(score, 3),
                 "advice": advice
             })
-            print(f"[{status}] - Skor: {score:.3f} | Madde: {req[:40]}...")
+            #print(f"[{status}] - Skor: {score:.3f} | Madde: {req[:40]}...")
             
     return recommendations
 

@@ -44,8 +44,6 @@ def process_cv():
         real_requirements = filter_requirements(atoms)
         recommendations = generate_recommendations(real_requirements, cv_text)
         format_final_report(recommendations)
-        print("Recommendations:")
-        format
         # GUI’ye yazdır
         result_text.insert(tk.END, f"\n✅ Benzerlik Skoru: {score}\n\n")
         result_text.insert(tk.END, "📊 Çıkarılan Bilgiler (JSON):\n")
