@@ -107,4 +107,4 @@ Tam çalışan bir sistem için aşağıdaki servislerin de ayakta olması gerek
 | İsim Soyisim       | GitHub Profili                                 |
 | :----------------- | :--------------------------------------------- |
 | **Tolga Direk**    | [@tolgadirek](https://github.com/tolgadirek)   |
-| **Alper Can Özer** | [@LoverVeysel](https://github.com/LoverVeysel) |
+| **Alper Can Özer** | [@Jessitoii](https://github.com/Jessitoii) |
