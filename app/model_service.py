@@ -11,10 +11,7 @@ from pdf_to_text import pdf_to_text
 import spacy
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-# append sys ../src path for imports
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src'))
-from suggestion import generate_recommendations
+
 LOG_LEVEL = logging.INFO
 
 logger = logging.getLogger(__name__)

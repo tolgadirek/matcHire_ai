@@ -27,7 +27,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # append sys ../src path for imports
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src'))
-from suggestion import generate_recommendations
+from suggestion import generate_recommendations, format_final_report
 from utils import filter_requirements, job_description_to_atoms
 LOG_LEVEL = logging.INFO
 # Constants
@@ -61,7 +61,7 @@ def create_app(model_path: Optional[Path] = None) -> Flask:
             "cv_path": "uploads/cv/.../abc.pdf"  (Node gönderebilir)
         }
         """
-
+        print("Yeni istek alındı similarity")
         data = request.get_json(silent=True) or {}
 
         cv_id = data.get("cvId")
@@ -85,11 +85,18 @@ def create_app(model_path: Optional[Path] = None) -> Flask:
         
     @app.route("/explain_keywords", methods=["POST"])
     def explain_keywords():
+        print("\n=== Yeni İstek Alındı: /explain_keywords ===")
+        service: ModelService = current_app.config["MODEL_SERVICE"]
+
         cv_text = request.json.get("cv_text", "")
+        cv_text = service.translate_if_needed(cv_text, target_lang="en") 
         job_text = request.json.get("job_text", "")
         atoms = job_description_to_atoms(job_text)
         real_requirements = filter_requirements(atoms)
         recommendations = generate_recommendations(real_requirements, cv_text)
+        print("recommandations: ", recommendations)
+        format_final_report(recommendations)
+
 
         return jsonify({"recommendations": [str(rec) for rec in recommendations]})
 
