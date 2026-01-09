@@ -7,8 +7,8 @@ import tkinter as tk
 from tkinter import filedialog, scrolledtext
 from pdf_to_text import pdf_to_text
 from matcher import calculate_similarity  # 🔹 Artık buradan geliyor
-from utils import filter_requirements, job_description_to_atoms
-from suggestion import generate_recommendations, format_final_report
+from matchire_ai.app.utils import filter_requirements, job_description_to_atoms
+from matchire_ai.app.suggestion import generate_recommendations, format_final_report
 import os   
 
 def process_cv():

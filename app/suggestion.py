@@ -1,12 +1,11 @@
-import os
-from sentence_transformers import SentenceTransformer, util
-from utils import filter_requirements
+from sentence_transformers import util
 
-MODEL_PATH = "./models/smart_job_model"
-SETTINGS_PATH = os.path.join(MODEL_PATH, "scoring_settings.json")
-model = SentenceTransformer(MODEL_PATH)
+# NOT: Modeli burada tekrar YÜKLEMİYORUZ. Main.py'dan parametre olarak alıyoruz.
 
-def generate_recommendations(real_requirements, cv_text, model=model):
+def generate_recommendations(real_requirements, cv_text, model):
+    """
+    model: SentenceTransformer instance (passed from main.py)
+    """
     cv_emb = model.encode(cv_text, convert_to_tensor=True)
     recommendations = []
     
@@ -16,8 +15,7 @@ def generate_recommendations(real_requirements, cv_text, model=model):
         # Gereksinim cümlesi ile CV arasındaki benzerliği ölç
         score = util.cos_sim(req_emb, cv_emb).item()
         
-        # Kritik Eşik (Threshold) Yönetimi
-        # Unutma: Cümle vs CV kıyaslamasında 0.40 çok iyi bir skordur.
+        # Skorlama Mantığı
         if score < 0.30:
             status = "EKSİK"
             advice = f"CV'nizde '{req}' beklentisine dair güçlü bir kanıt bulunamadı. Bu yeteneği projelerinizle örneklendirerek eklemelisiniz."
@@ -35,7 +33,6 @@ def generate_recommendations(real_requirements, cv_text, model=model):
                 "score": round(score, 3),
                 "advice": advice
             })
-            #print(f"[{status}] - Skor: {score:.3f} | Madde: {req[:40]}...")
             
     return recommendations
 
